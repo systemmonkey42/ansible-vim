@@ -30,14 +30,8 @@ def to_snippet(document):
 
         for index, (name, option) in enumerate(options, 1):
             if 'choices' in option:
-                default = option.get('default')
-                if isinstance(default, list):
-                    prefix = lambda x: '#' if x in default else ''
-                    suffix = lambda x: "'%s'" % x if isinstance(x, str) else x
-                    value = '[' + ', '.join("%s%s" % (prefix(choice), suffix(choice)) for choice in option['choices'])
-                else:
-                    prefix = lambda x: '#' if x == default else ''
-                    value = '|'.join('%s%s' % (prefix(choice), choice) for choice in option['choices'])
+                value = '|'.join('%s' % choice for choice in option['choices'])
+                value = '#' + value
             elif option.get('default') is not None and option['default'] != 'None':
                 value = option['default']
                 if isinstance(value, bool):
@@ -51,6 +45,8 @@ def to_snippet(document):
 
             if name == 'free_form':  # special for command/shell
                 snippet.append('\t\t${%d:%s%s%s}' % (index, name, delim, value))
+            elif len(str(value)) == 0:
+                snippet.append('\t\t%s%s${%d}' % (name, delim, index))
             else:
                 snippet.append('\t\t%s%s${%d:%s}' % (name, delim, index, value))
 
