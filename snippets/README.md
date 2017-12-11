@@ -1,7 +1,7 @@
 Generate Snippets Based on Ansible Modules
 ==========================================
 
-A script to generate `UltiSnips` based on ansible code on the fly.
+A script to generate `neosnippet` based on ansible code on the fly.
 
 **Note:** Requires Ansible 2.4 or later.
 
