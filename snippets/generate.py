@@ -12,13 +12,12 @@ from ansible.utils import plugin_docs
 def get_documents():
     for root, dirs, files in os.walk(os.path.dirname(ansible.modules.__file__)):
         for f in files:
-            if f == '__init__.py' or not f.endswith('py'):
+            if f == '__init__.py' or not f.endswith('py') or f.startswith('_'):
                 continue
             documentation = plugin_docs.get_docstring(os.path.join(root, f))[0]
             if documentation is None:
                 continue
             yield documentation
-
 
 def to_snippet(document):
     snippet = []
@@ -31,13 +30,14 @@ def to_snippet(document):
         for index, (name, option) in enumerate(options, 1):
             if 'choices' in option:
                 value = '|'.join('%s' % choice for choice in option['choices'])
-                value = '#' + value
+                value = '#' + value if len(option['choices']) != 0 else ''
             elif option.get('default') is not None and option['default'] != 'None':
                 value = option['default']
                 if isinstance(value, bool):
                     value = 'yes' if value else 'no'
             else:
-                value = "# " + option.get('description', [''])[0]
+                value = ''
+
             if args.style == 'dictionary':
                 delim = ': '
             else:
@@ -45,7 +45,7 @@ def to_snippet(document):
 
             if name == 'free_form':  # special for command/shell
                 snippet.append('\t\t${%d:%s%s%s}' % (index, name, delim, value))
-            elif len(str(value)) == 0:
+            elif isinstance(value, unicode) and len(value) == 0:
                 snippet.append('\t\t%s%s${%d}' % (name, delim, index))
             else:
                 snippet.append('\t\t%s%s${%d:%s}' % (name, delim, index, value))
@@ -61,7 +61,7 @@ def to_snippet(document):
         snippet.insert(0, '\t%s:' % (document['module']))
     else:
         snippet.insert(0, '\t%s:%s' % (document['module'], ' >' if len(snippet) else ''))
-    snippet.insert(0, 'snippet %s "%s"' % (document['module'], document['short_description']))
+    snippet.insert(0, 'snippet %s' % (document['module']))
     snippet.append('')
     return "\n".join(snippet)
 
