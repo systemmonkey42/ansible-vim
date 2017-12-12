@@ -1,17 +1,47 @@
-function! s:isAnsible()
-  let filepath = expand("%:p")
-  let filename = expand("%:t")
-  if filepath =~ '\v/(tasks|roles|handlers)/.*\.ya?ml$' | return 1 | en
-  if filepath =~ '\v/(group|host)_vars/' | return 1 | en
-  if filename =~ '\v(playbook|site|main|local)\.ya?ml$' | return 1 | en
+" Determine if normal YAML or Ansible YAML
+" Language:        YAML (with Ansible)
+" Maintainer:      Benji Fisher, Ph.D. <benji@FisherFam.org>
+" Author:          Chase Colman <chase@colman.io>
+" Version:         1.0
+" Latest Revision: 2015-03-23
+" URL:             https://github.com/chase/vim-ansible-yaml
 
-  let shebang = getline(1)
-  if shebang =~# '^#!.*/bin/env\s\+ansible-playbook\>' | return 1 | en
-  if shebang =~# '^#!.*/bin/ansible-playbook\>' | return 1 | en
+autocmd BufNewFile,BufRead *.yml,*.yaml,*/{group,host}_vars/*  call s:SelectAnsible("ansible")
+autocmd BufNewFile,BufRead hosts call s:SelectAnsible("ansible_hosts")
 
-  return 0
-endfunction
+fun! s:SelectAnsible(fileType)
+  " Bail out if 'filetype' is already set to "ansible".
+  if index(split(&ft, '\.'), 'ansible') != -1
+    return
+  endif
 
-:au BufNewFile,BufRead * if s:isAnsible() | set ft=ansible | en
-:au BufNewFile,BufRead *.j2 set ft=ansible_template
-:au BufNewFile,BufRead hosts set ft=ansible_hosts
+  let fp = expand("<afile>:p")
+  let dir = expand("<afile>:p:h")
+
+  " for windows
+  let fp = substitute(fp,'\\','/','g')
+  let dir = substitute(dir,'\\','/','g')
+
+  " Check if buffer is file under any directory of a 'roles' directory
+  " or under any *_vars directory
+  if fp =~ '/roles/.*\.y\(a\)\?ml$' || fp =~ '/\(group\|host\)_vars/'
+    execute "set filetype=" . a:fileType . '.yaml'
+    return
+  endif
+
+  " Check if subdirectories in buffer's directory match Ansible best practices
+  if v:version < 704
+    let directories=split(glob(fnameescape(dir) . '/{,.}*/', 1), '\n')
+  else
+    let directories=glob(fnameescape(dir) . '/{,.}*/', 1, 1)
+  endif
+
+  call map(directories, 'fnamemodify(v:val, ":h:t")')
+
+  for dir in directories
+    if dir =~ '\v^%(group_vars|host_vars|roles)$'
+      execute "set filetype=" . a:fileType
+      return
+    endif
+  endfor
+endfun
