@@ -6,6 +6,8 @@
 " Latest Revision: 2015-03-23
 " URL:             https://github.com/chase/vim-ansible-yaml
 
+" vint: -ProhibitImplicitScopeVariable
+
 autocmd BufNewFile,BufRead *.yml,*.yaml,*/{group,host}_vars/*  call s:SelectAnsible("ansible")
 autocmd BufNewFile,BufRead hosts call s:SelectAnsible("ansible_hosts")
 
